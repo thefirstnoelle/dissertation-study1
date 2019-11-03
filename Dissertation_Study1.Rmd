@@ -1,0 +1,254 @@
+---
+title: "Dissertation - Summary of Study 1 Results"
+author: "Noelle A. Malvar"
+date: "10/30/2019"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+```{r setup, include = FALSE}
+library(ggplot2)
+library(dplyr)
+library(jmv)
+library(tidyverse)
+library(psych)
+library(ggplot2)
+library(sjmisc)
+library(sjstats)
+library(knitr)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+```
+
+```{r echo=FALSE}
+data<-read.csv("DissStudy1_v7.csv")
+data2<-select(data, "Likelihood","polorient_num","RIQ_mean", "SDO_mean","pc_WA","pc_BA")
+```
+
+# Overview
+
+
+##  Methods
+
+### Participants: 
+* N = 333: 162 Low status (Blacks), 171 High status (Whites)
+* 62% females
+* Political affiliation: 1-Democrat 2-Independent 3-Republican
+
+```{r echo=FALSE}
+table(data$Race,data$Condition)
+table(data$Race,data$Polaff)
+```
+
+
+### Procedure: 
+1. Screening question (eliminate extreme scores on 2 screener questions)
+2. Part 1: questionnaire with demographic variables, centrality of racial identity, social dominance orientation
+3. Part 2: intervention (Mindset versus Control)
+4. Part 3: intention to engage in dialogue (measured with 2 items); demo variables (e.g., polotical orientation)
+
+### Design: 2 (intervention: mindset vs control) X 2 (status: low vs high) ANCOVA
+
+***
+
+### Preliminary Analyses 
+1. Correlations of relevant variables
+2. Look for covariates
+
+
+##Correlation 
+
+```{r data2, echo=FALSE}
+jmv::corrMatrix(data2)
+```
+
+
+####Proposed covariates (significantly related to intentions)
+* Political orientation
+
+* Covariates have to be 1. signficantly related to the outcome variable BUT be independent of the IV 2. Have homogeneity of regression slopes
+
+
+```{r echo=FALSE}
+t.test(data$polorient_num~data$Race, var.equal = TRUE)
+t.test(data$polorient_num~data$Condition, var.equal = TRUE) 
+```
+
+
+
+###Summary of covariate analyses:
+**Political orientation**
+
+* Significantly related to intentions to engage (the more conservative, the higher the intentions)
+* People in the intervention condition had significantly political orientation (were MORE conservative)
+* Obvious question: did my intervention "cause" participants to be more consevative? NO. The frequencies for political affiliation show that there were more republicans in the intervention condition to begin with
+* Important point: The means were not very different:  **Control: 2.39 vs Intervention:2.72**
+
+
+```{r echo=FALSE}
+ggplot(data, aes(x=polorient_num, y=Likelihood, colour=Condition)) +
+  geom_point() + 
+  geom_smooth(method=lm,fullrange=TRUE)
+```
+ 
+
+
+####Should I include as a covariate anyway?
+
+
+***
+
+
+
+###Did the manipulation work?
+####Manipulation check (composite means computed as variable 'Postmean')
+#####Items
+1. People can substantially change the kind of person they are. 
+2. The saying, ‘you can’t teach an old dog new tricks’ is generally true.  
+3. Being good at communicating with others is a skill that can be learned by anyone.  
+4. People are either naturally good at engaging in dialogue with others or they’re not. 
+5. Some people have a natural ability to communicate with others that other people just do not have. 
+
+###Reliability for manipulation check items:
+not too good: alpha = .46
+
+
+
+###2 x 2 ANOVA with Postmean as DV
+```{r data, echo=FALSE}
+ aggregate(data$Postmean,by = list(data$Race,data$Condition),
+                FUN = mean)
+aggregate(data$Postmean,by = list(data$Race),FUN = mean)
+aggregate(data$Postmean,by = list(data$Condition),FUN = mean)
+Postmeanbp <- ggplot(data, aes(x = Condition, y = Postmean, fill = Race)) +
+  geom_boxplot(size = .75) +
+  scale_y_continuous(name = "Postintervention",
+                     limits = c(1, 7)) +
+  theme(legend.position = "bottom")
+Postmeanbp
+PostAOV <- aov(data$Postmean ~ Condition*Race, data = data) 
+summary(PostAOV, digits=2)
+eta_sq(PostAOV)
+```
+
+
+
+**Main effect for race, with White > Black** 
+* Items seem weak, unable to capture the effect, if any. 
+* Think about tweaking the items. 
+
+
+
+####Additional analyses with manipulation check:
+* Calculated another manipulation check variable with just the dialogue-specific items. Patterns were the same.
+* Relationship between intervention condition and post-intervention means NOT moderated by centrality of racial identity
+
+***
+
+
+
+##Main Analyses (ANOVA)
+####Measure: In communities around the country and through online forums, facilitated dialogues on challenging topics are available for anyone to join, how likely are you to participate in a dialogue on race in the future with a person from another racial group? (1-7)
+
+
+
+###2 (intervention: mindset vs control) X 2 (status: low vs high) ANOVA
+
+```{r echo=FALSE}
+jmv::ANOVA(
+    formula = Likelihood ~ Condition + Race + Condition:Race,
+    data = data,
+    effectSize = "partEta",
+    homo = TRUE,
+    contrasts = list(
+        list(
+            var="Condition",
+            type="simple"),
+        list(
+            var="Race",
+            type="none")),
+    postHoc = ~ Condition:Race + Condition,
+    emMeans = ~ Condition:Race,
+    emmTables = TRUE)
+
+```
+
+
+###Summary: 
+* No main effect of intervention
+* No main effect for race
+* No interaction
+
+
+
+
+***
+
+
+##2 x 2 ANCOVA: With political orientation as covariate
+
+```{r echo=FALSE}
+jmv::ancova(
+    formula = Likelihood ~ Condition + Race + Polorient + Condition:Race,
+    data = data,
+    effectSize = "partEta",
+    homo = TRUE,
+    postHoc = ~ Condition:Race,
+    emMeans = ~ Condition:Race,
+    emmTables = TRUE)
+    ```
+
+
+
+
+
+###Summary: 
+* **Main effect of intervention (p=.035)**
+* No main effect for race (p=.992)
+* No interaction (p=.194)
+
+
+
+
+
+***
+
+
+
+
+
+####DV2: We are piloting an online facilitated dialogue program that would bring together people from different groups with the goal of discussing issues on inequality. Please indicate below if you are interested in signing up for this initiative. 
+####If you are willing to participate in this program, we will be contacting you (via your preferred method of contact, to be asked at the end of the survey) in the following weeks with further details: Yes/ No
+
+
+###Binomial logistic regression
+
+###Ran 2(Control vs Intervention) x 2 (Yes vs No) split by race
+
+
+
+```{r echo=FALSE}
+jmv::contTables(
+    formula = ~ Condition:`Yes.no`:Race,
+    data = data,
+    layers = Race,
+    odds = TRUE,
+    pcRow = TRUE)
+```
+    
+
+
+
+###Binomial logistic regression
+####IV: Race, Condition
+####DV: Yes/No 
+
+
+
+
+####Points of discussion for the meeting
+1. The effect sizes are tiny, I can evaluate this in the context of the growth mindset literature and criticism, but there seems to be something happening? 
+2. The 2 measures for the DV may be measuring subtly difference intentions
+3. Manipulation check items
